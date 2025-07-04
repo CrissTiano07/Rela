@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerador de Relatório</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-top: 0.5rem;
+      font-weight: bold;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.2rem;
+      box-sizing: border-box;
+      text-transform: uppercase;
+    }
+    .formulario {
+      margin-top: 1rem;
+    }
+    .aguardando-item, .ocorrencia-item {
+      border: 1px solid #ddd;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      border-radius: 4px;
+    }
+    .aguardando-item label, .ocorrencia-item label {
+      display: inline-block;
+      width: 80px;
+      margin-right: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .aguardando-item input, .ocorrencia-item input {
+      width: calc(100% - 90px);
+      display: inline-block;
+      margin-bottom: 0.5rem;
+    }
+    .section {
+      background: #fff;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 0.7rem 1.5rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    pre {
+      background: #eee;
+      padding: 1rem;
+      white-space: pre-wrap;
+    }
+    .future {
+      margin-top: 2rem;
+      padding: 1rem;
+      border: 2px dashed #ccc;
+      text-align: center;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gerador de Relatórios</h1>
+  
+  <div class="section">
+    <label>Selecione o tipo de relatório:</label>
+    <select id="tipoRelatorio" onchange="mostrarFormulario()">
+      <option value="">Selecione...</option>
+      <option value="turno">Relatório de Turno</option>
+      <option value="semaforo">Relatório de Atendimento Semafórico</option>
+    </select>
+  </div>
+
+  <div id="formTurno" class="formulario" style="display: none;">
+    <div class="section">
+      <label>Turno:</label>
+      <input id="turno" type="text">
+
+      <label>Data:</label>
+      <input id="data" type="date">
+
+      <label>Total de Agentes:</label>
+      <input id="totalAgentes" type="number">
+
+      <label>Central:</label>
+      <input id="monitor" type="text">
+
+      <label>Supervisão:</label>
+      <input id="supervisor" type="text">
+
+      <label>VLVT:</label>
+      <input id="vlvt" type="text">
+    </div>
+
+    <div class="section">
+      <h3>Ocorrências:</h3>
+      <div id="ocorrenciasContainer">
+        <div class="ocorrencia-item">
+          <label>QRU:</label><input type="text" class="qru-ocorrencia">
+          <label>QTH:</label><input type="text" class="qth-ocorrencia">
+          <label>VT:</label><input type="text" class="vt-ocorrencia">
+          <label>Equipe:</label><input type="text" class="equipe-ocorrencia">
+        </div>
+      </div>
+      <button type="button" onclick="adicionarOcorrencia()">Adicionar Ocorrência</button>
+    </div>
+
+    <div class="section">
+      <h3>Ocorrência Especial (MTVL):</h3>
+      <label>QRU:</label><input id="qru6" type="text">
+      <label>QTH:</label><input id="qth6" type="text">
+      <label>MTVL1:</label><input id="mtvl6_1" type="text">
+      <label>MTVL2:</label><input id="mtvl6_2" type="text">
+      <label>MTVL3:</label><input id="mtvl6_3" type="text">
+    </div>
+
+    <button onclick="gerarRelatorioTurno()">Gerar Relatório de Turno</button>
+  </div>
+
+  <div id="formSemaforo" class="formulario" style="display: none;">
+    <div class="section">
+      <label>Data:</label>
+      <input id="dataSemaforo" type="date">
+
+      <label>Total de Ocorrências:</label>
+      <input id="totalOcorrencias" type="number">
+
+      <label>Pendentes:</label>
+      <input id="pendentes" type="number">
+
+      <label>Normalizados:</label>
+      <input id="normalizados" type="number">
+    </div>
+
+    <div class="section">
+      <h3>Atendimentos:</h3>
+      <label>Atendidos pelo Via Livre:</label>
+      <textarea id="atendidosViaLivre" rows="3"></textarea>
+
+      <label>Atendidos pela AMC:</label>
+      <textarea id="atendidosAMC" rows="3"></textarea>
+
+      <label>Pendentes / Outros Motivos:</label>
+      <textarea id="pendentesOutros" rows="3"></textarea>
+    </div>
+
+    <div class="section">
+      <h3>Aguardando Atendimento:</h3>
+      <div id="aguardandoContainer">
+        <div class="aguardando-item">
+          <label>Código:</label><input type="text" class="codigo-aguardando">
+          <label>Endereço:</label><input type="text" class="endereco-aguardando">
+          <label>Status:</label><input type="text" class="status-aguardando">
+        </div>
+      </div>
+      <button type="button" onclick="adicionarAguardando()">Adicionar Item</button>
+    </div>
+
+    <div class="section">
+      <h3>Sem Necessidade de Operação:</h3>
+      <textarea id="semNecessidade" rows="3"></textarea>
+    </div>
+
+    <button onclick="gerarRelatorioSemaforo()">Gerar Relatório Semafórico</button>
+  </div>
+
+  <pre id="saida"></pre>
+
+  <div class="future">
+    Espaço reservado para outros relatórios futuros 🛠️
+  </div>
+
+ <script>
+  function mostrarFormulario() {
+    const tipo = document.getElementById('tipoRelatorio').value;
+    const formTurno = document.getElementById('formTurno');
+    const formSemaforo = document.getElementById('formSemaforo');
+    
+    formTurno.style.display = 'none';
+    formSemaforo.style.display = 'none';
+    
+    if (tipo === 'turno') {
+      formTurno.style.display = 'block';
+    } else if (tipo === 'semaforo') {
+      formSemaforo.style.display = 'block';
+    }
+  }
+
+  function adicionarOcorrencia() {
+    const container = document.getElementById('ocorrenciasContainer');
+    const novoItem = document.createElement('div');
+    novoItem.className = 'ocorrencia-item';
+    novoItem.innerHTML = `
+      <label>QRU:</label><input type="text" class="qru-ocorrencia">
+      <label>QTH:</label><input type="text" class="qth-ocorrencia">
+      <label>VT:</label><input type="text" class="vt-ocorrencia">
+      <label>Equipe:</label><input type="text" class="equipe-ocorrencia">
+      <button type="button" onclick="this.parentNode.remove()">Remover</button>
+    `;
+    container.appendChild(novoItem);
+  }
+
+  function adicionarAguardando() {
+    const container = document.getElementById('aguardandoContainer');
+    const novoItem = document.createElement('div');
+    novoItem.className = 'aguardando-item';
+    novoItem.innerHTML = `
+      <label>Código:</label><input type="text" class="codigo-aguardando">
+      <label>Endereço:</label><input type="text" class="endereco-aguardando">
+      <label>Status:</label><input type="text" class="status-aguardando">
+      <button type="button" onclick="this.parentNode.remove()">Remover</button>
+    `;
+    container.appendChild(novoItem);
+  }
+
+  function gerarRelatorioTurno() {
+    const get = id => document.getElementById(id)?.value.trim();
+    const getText = id => get(id)?.toUpperCase();
+
+    let texto = "";
+
+    const turno = getText("turno");
+    const data = get("data");
+    const totalAgentes = get("totalAgentes");
+    const monitor = getText("monitor");
+    const supervisor = getText("supervisor");
+    const vlvt = getText("vlvt");
+
+    if (turno) texto += `TURNO: ${turno}\n`;
+    if (data) texto += `DATA: ${data}\n`;
+    if (totalAgentes) texto += `TOTAL AGENTES: ${totalAgentes}\n`;
+    if (monitor) texto += `CENTRAL: ${monitor}\n`;
+    if (supervisor) texto += `SUPERVISÃO: ${supervisor}\n`;
+    if (vlvt) texto += `VLVT: ${vlvt}\n`;
+
+    // Ocorrências dinâmicas
+    const ocorrenciaItems = document.querySelectorAll('.ocorrencia-item');
+    ocorrenciaItems.forEach(item => {
+      const qru = item.querySelector('.qru-ocorrencia')?.value.trim().toUpperCase();
+      const qth = item.querySelector('.qth-ocorrencia')?.value.trim().toUpperCase();
+      const vt = item.querySelector('.vt-ocorrencia')?.value.trim().toUpperCase();
+      const equipe = item.querySelector('.equipe-ocorrencia')?.value.trim().toUpperCase();
+
+      if (qru || qth || vt || equipe) {
+        texto += `\nQRU: ${qru || "-"}\nQTH: ${qth || "-"}\nVT: ${vt || "-"}\nEQUIPE: ${equipe || "-"}\n`;
+      }
+    });
+
+    // Ocorrência especial MTVL
+    const qru6 = getText("qru6");
+    const qth6 = getText("qth6");
+    const mtvl1 = getText("mtvl6_1");
+    const mtvl2 = getText("mtvl6_2");
+    const mtvl3 = getText("mtvl6_3");
+
+    if (qru6 || qth6 || mtvl1 || mtvl2 || mtvl3) {
+      texto += `\nQRU: ${qru6 || "-"}\nQTH: ${qth6 || "-"}`;
+      if (mtvl1) texto += `\nMTVL1: ${mtvl1}`;
+      if (mtvl2) texto += `\nMTVL2: ${mtvl2}`;
+      if (mtvl3) texto += `\nMTVL3: ${mtvl3}`;
+      texto += "\n";
+    }
+
+    document.getElementById("saida").textContent = texto.trim() || "Nenhum dado preenchido.";
+  }
+
+  function gerarRelatorioSemaforo() {
+    const get = id => document.getElementById(id)?.value.trim();
+    const getText = id => get(id)?.toUpperCase();
+
+    let texto = "";
+    
+    const dataSemaforo = get("dataSemaforo");
+    const totalOcorrencias = get("totalOcorrencias");
+    const pendentes = get("pendentes");
+    const normalizados = get("normalizados");
+
+    // Formatar data
+    if (dataSemaforo) {
+      const dataObj = new Date(dataSemaforo);
+      const dataFormatada = dataObj.toLocaleDateString('pt-BR');
+      texto += `RELATÓRIO DE ATENDIMENTO SEMAFÓRICO – ${dataFormatada}\n`;
+    }
+
+    if (totalOcorrencias) {
+      texto += `Ocorrências de Apagados/Piscantes (${totalOcorrencias})\n`;
+    }
+    if (pendentes) {
+      texto += `Pendentes (${pendentes})\n`;
+    }
+    if (normalizados) {
+      texto += `Normalizados (${normalizados})\n`;
+    }
+
+    const atendidosViaLivre = getText("atendidosViaLivre");
+    const atendidosAMC = getText("atendidosAMC");
+    const pendentesOutros = getText("pendentesOutros");
+
+    if (atendidosViaLivre) {
+      texto += `\nATENDIDOS PELO VIA LIVRE:\n${atendidosViaLivre}\n`;
+    } else {
+      texto += `\nATENDIDOS PELO VIA LIVRE:\n`;
+    }
+
+    if (atendidosAMC) {
+      texto += `\nATENDIDOS PELA AMC:\n${atendidosAMC}\n`;
+    } else {
+      texto += `\nATENDIDOS PELA AMC:\n`;
+    }
+
+    if (pendentesOutros) {
+      texto += `\nPENDENTES / OUTROS MOTIVOS:\n${pendentesOutros}\n`;
+    } else {
+      texto += `\nPENDENTES / OUTROS MOTIVOS:\n`;
+    }
+
+    // Aguardando atendimento
+    const aguardandoItems = document.querySelectorAll('.aguardando-item');
+    if (aguardandoItems.length > 0) {
+      texto += `\n- - Aguardando atendimento:\n`;
+      aguardandoItems.forEach(item => {
+        const codigo = item.querySelector('.codigo-aguardando')?.value.trim().toUpperCase();
+        const endereco = item.querySelector('.endereco-aguardando')?.value.trim().toUpperCase();
+        const status = item.querySelector('.status-aguardando')?.value.trim().toUpperCase();
+        
+        if (codigo || endereco || status) {
+          texto += `${codigo || "---"}\t${endereco || "---"} - ${status || "---"}\n`;
+        }
+      });
+    }
+
+    const semNecessidade = getText("semNecessidade");
+    if (semNecessidade) {
+      texto += `\n- - Sem necessidade de operação:\n${semNecessidade}\n`;
+    } else {
+      texto += `\n- - Sem necessidade de operação:\n`;
+    }
+
+    document.getElementById("saida").textContent = texto.trim() || "Nenhum dado preenchido.";
+  }
+</script>
+
+</body>
+</html>
